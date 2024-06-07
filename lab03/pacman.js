@@ -1,7 +1,7 @@
 
 
 /**
- * Creates an array representing a pacman game of size N (>= 5), and a dictionary tracking the indices of key pieces
+ * Creates an array representing a pacman game of size N (>= 5), and a dictionary tracking the indices of key pieces. This function is a pseudo-class basically...
  *
  * @param {*} N - size of the game board
  * @returns {{}} - game variables in an array
@@ -75,8 +75,14 @@ function moveLeft(game){
             // console.log(positions)
             return moveLeft([gameBoard, positions, size])
         case "^":
-            // console.log(targetPos + " is a ghost")
+            gameBoard[targetPos] = "^"; //eat pellet
+            gameBoard[pacPos] = " "; //empty space behind
+            positions["C"] = targetPos;
+            positions["^"] = targetPos;
+            console.log(gameBoard)
             console.log("Pacman walked into a ghost, so game over.")
+            score = (size - 1) - pelletCount(game);
+            console.log("Final score: " + score)
             break;
         case "@":
             gameBoard[targetPos] = "C";
@@ -134,5 +140,13 @@ function moveRight(game){
     }
 }
 
-moveLeft(game)
-moveRight(game)
+function pelletCount(game){
+    let pellets = game[0].filter(x => x === ".").length;
+    // console.log("There are " + pellets + " pellets left")
+    return pellets;
+}
+
+let pellets = pelletCount(game)
+
+// moveLeft(game)
+// moveRight(game)
