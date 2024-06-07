@@ -1,8 +1,10 @@
+
+
 /**
- * Creates an array representing a pacman game of size N (>= 5).
+ * Creates an array representing a pacman game of size N (>= 5), and a dictionary tracking the indices of key pieces
  *
- * @param {Number} N - Any integer number.
- * @returns {String[]} pelletLine - an array of characters containing
+ * @param {*} N
+ * @returns {{}}
  */
 function createGame(N){
     
@@ -21,21 +23,19 @@ function createGame(N){
         i += 1
     }
 
-    const gameElements = new Array("C", "^", "@")
+    // Establish a dict for the key pieces and anticipated indices
+    var pieces = {"C": null, "^": null, "@": null}
 
-    i = 0;
-    while (i < gameElements.length){
-        // console.log(gameElements[i])
+    for(var key in pieces) {
         random = Math.floor(Math.random() * N)
         while (pelletLine[random] != pellet){
             random = Math.floor(Math.random() * N)
         }
-        pelletLine[random] = gameElements[i];
-        i += 1
+        pelletLine[random] = key;
+        pieces[key] = random;
     }
 
-    // console.log(random)
-    return pelletLine
+    return [pelletLine, pieces]
 }
 
 console.log(createGame(10))
