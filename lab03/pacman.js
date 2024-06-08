@@ -1,47 +1,49 @@
-window.onload=function(){
-    const pelletLine = document.getElementById("pelletLine");
-  
-    var gameState = "playing";
-    var roundScore = 0;
-    var totalScore = 0; //Score is only updated upon completing a round, not incrementally.
+//global game var
+var N = 10
+var game = createGame(N)
+var ghostTrigger = setInterval(moveGhost, 2000, game);
+var totalScore = 0; //Score is only updated upon completing a round, not incrementally.
+var gameState = 0;
 
-    let game = createGame(15)
-    pelletLine.innerHTML = "[ " + renderBoard(game).join(" | ") + " ]";
+window.onload=function(game){
+
+    const pelletLine = document.getElementById("pelletLine");
+    renderBoard();
+
+    const commentary = document.getElementById("commentary");
+    commentary.innerHTML = "Score: " + totalScore
+
+    //for arrow input activation / deactivation
 
     //Handle inputs
     window.addEventListener('keydown', event => {
         
         if (event.key == "ArrowLeft") {
-            console.log("Left key");
-            if (game != null){
+            // console.log("Left key");
+            if (gameState == 0){
                 let size = game[2];
-                roundScore = ((size-1) - pelletCount(game[0]));
-                game = moveLeft(game)
+                moveLeft()
+                renderBoard();
+                commentary.innerHTML = "Score: " + totalScore
             }
         } else if (event.key == "ArrowRight") {
-            console.log("Right key");
-            if (game != null){
+            // console.log("Right key");
+            if (gameState == 0){
                 let size = game[2];
-                roundScore = ((size-1) - pelletCount(game[0]));
-                game = moveRight(game)
+                moveRight()
+                renderBoard();
+                commentary.innerHTML = "Score: " + totalScore
             }
         }
 
-        //Handle state switches
-        if (game == null){
-            totalScore += roundScore;
-            roundScore = 0;
-            pelletLine.innerHTML = "GAME OVER.  FINAL SCORE: " + totalScore  
-        }
-        else if (pelletCount(game[0]) == 0){
-            totalScore += roundScore;
-            roundScore = 0;
-            totalScore += roundScore;
-            pelletLine.innerHTML = "YOU WIN. FINAL SCORE: " + totalScore
-            //score only locks in once you win a round.
+        if (pelletCount(game[0]) == 0){
+            clearInterval(ghostTrigger);
+            renderBoard();
+            commentary.innerHTML = "YOU WIN. FINAL SCORE: " + totalScore
+            gameState = 1;
         }
         else{
-            pelletLine.innerHTML = "[ " + renderBoard(game).join(" | ") + " ]";
+            renderBoard();
         }
     })
   }
@@ -89,14 +91,14 @@ function createGame(N){
     return [pelletLine, pieces, N-1]
 }
 
-function moveLeft(game){
+function moveLeft(){
     let gameBoard = game[0];
     let positions = game[1];
     let size = game[2];
 
     let pacPos = positions["C"];
     
-    console.log("Pacman at " + pacPos + ", looking to move left");
+    // console.log("Pacman at " + pacPos + ", looking to move left");
     let targetPos = pacPos;
     if (pacPos == 0){
         targetPos = size
@@ -124,45 +126,41 @@ function moveLeft(game){
         case ".":
             gameBoard[targetPos] = " " //eat the pellet on "lower layer"
             positions["C"] = targetPos; //Move pacman on "upper layer" 
-            render = renderBoard(game);
-            console.log(render);
-            pellets = pelletCount(gameBoard);
-            console.log("There are " + pellets + " pellets left")
-            return [gameBoard, positions, size];
+            totalScore += 1;
+            game = [gameBoard, positions, size];
+            break;
         case "^":
+            document.getElementById("commentary").innerHTML = "GAME OVER. FINAL SCORE: " + totalScore;
+            clearInterval(ghostTrigger);
             console.log("Pacman walked into a ghost at " + targetPos + ". Game over.");
-            pellets = pelletCount(gameBoard);
-            console.log("There are " + pellets + " pellets left.")
-            console.log("You ate " + ((size-1) - pellets) + " pellets.")
-            console.log(gameBoard)
-            return null;
+            gameBoard[targetPos] = "^"
+            positions["C"] = targetPos;
+            game = [gameBoard, positions, size]
+            gameState = 1;
+            break;
         case "@":
             gameBoard[targetPos] = " " //eat the fruit on "lower layer"
             positions["C"] = targetPos; //Move pacman on "upper layer" 
-            render = renderBoard(game);
-            console.log(render);
             pellets = pelletCount(gameBoard);
             console.log("Ate a fruit. Woop.")
-            console.log("There are " + pellets + " pellets left")
-            return [gameBoard, positions, size];
+            game = [gameBoard, positions, size];
+            break;
         default: //free space, can move through without issue
             positions["C"] = targetPos; //Move pacman on "upper layer" 
-            render = renderBoard(game);
-            console.log(render);
             pellets = pelletCount(gameBoard);
-            console.log("There are " + pellets + " pellets left")
-            return [gameBoard, positions, size];
+            game = [gameBoard, positions, size];
+            break;
     }
 }
 
-function moveRight(game){
+function moveRight(){
     let gameBoard = game[0];
     let positions = game[1];
     let size = game[2];
 
     let pacPos = positions["C"];
     
-    console.log("Pacman at " + pacPos + ", looking to move right");
+    // console.log("Pacman at " + pacPos + ", looking to move right");
     let targetPos = pacPos;
     if (pacPos == size){
         targetPos = 0
@@ -173,7 +171,7 @@ function moveRight(game){
 
     //Check if ghost is in target tile and update the target info
     let ghostPos = positions["^"];
-    console.log("Ghost at " + ghostPos);
+    // console.log("Ghost at " + ghostPos);
     let activeTile = null;
 
     if (targetPos == ghostPos){
@@ -191,56 +189,113 @@ function moveRight(game){
         case ".":
             gameBoard[targetPos] = " " //eat the pellet on "lower layer"
             positions["C"] = targetPos; //Move pacman on "upper layer" 
-            render = renderBoard(game);
-            console.log(render);
-            pellets = pelletCount(gameBoard);
-            console.log("There are " + pellets + " pellets left")
-            return [gameBoard, positions, size];
+            totalScore += 1;
+            game = [gameBoard, positions, size];
+            break;
         case "^":
+            document.getElementById("commentary").innerHTML = "GAME OVER. FINAL SCORE: " + totalScore;
+            clearInterval(ghostTrigger);
             console.log("Pacman walked into a ghost at " + targetPos + ". Game over.");
-            pellets = pelletCount(gameBoard);
-            console.log("There are " + pellets + " pellets left.")
-            console.log("You ate " + ((size-1) - pellets) + " pellets.")
-            console.log(gameBoard)
-            return null;
+            gameBoard[targetPos] = "^"
+            positions["C"] = targetPos;
+            game = [gameBoard, positions, size]
+            gameState = 1;
+            break;
         case "@":
             gameBoard[targetPos] = " " //eat the fruit on "lower layer"
             positions["C"] = targetPos; //Move pacman on "upper layer" 
-            render = renderBoard(game);
-            console.log(render);
             pellets = pelletCount(gameBoard);
             console.log("Ate a fruit. Woop.")
-            console.log("There are " + pellets + " pellets left")
-            return [gameBoard, positions, size];
+            game = [gameBoard, positions, size];
+            break;
         default: //free space, can move through without issue
             positions["C"] = targetPos; //Move pacman on "upper layer" 
-            render = renderBoard(game);
-            console.log(render);
             pellets = pelletCount(gameBoard);
-            console.log("There are " + pellets + " pellets left")
-            return [gameBoard, positions, size];
+            game = [gameBoard, positions, size];
+            break;
     }
 }
 
-/**
- * Returns a superposition of the pieces on top of the pellet line.
- *
- * @param {*} game
- * @returns {*} render - the ghost and pacman in their proper positions within the pellet line
- */
-function renderBoard(game){
+function moveGhost(){
+
     let gameBoard = game[0];
     let positions = game[1];
+    let size = game[2];
+
+    let ghostPos = positions["^"];
+    let targetPos = ghostPos
+    //Decide if we'll move left or right. 0 = Left. 1 = Right.
+    let coinFlip = Math.round(Math.random())
+
+    switch(coinFlip) {
+    case 0:
+        targetPos -= 1;
+        if (targetPos < 0){
+            targetPos = size //if we move our ghost off the screen, wrap him around to the right
+        }
+        // console.log("Ghost moves left from " + ghostPos + " to " + targetPos)
+        break;
+    case 1:
+        targetPos += 1;
+        if (targetPos > size){
+            targetPos = 0 //if we move our ghost off the screen, wrap him around to the left
+        }
+        // console.log("Ghost moves right from " + ghostPos + " to " + targetPos)
+        break;
+    default:
+        // console.log("For some reason, the ghost doesn't move at all.")
+        break;
+    }
     
+    //Check if Pacman is in target tile and update the target info
+    let pacPos = positions["C"];
+    // console.log("Pacman at " + pacPos);
+
+    let activeTile = null;
+
+    if (targetPos == pacPos){
+        activeTile = "C"
+    }
+    else{
+        activeTile = gameBoard[targetPos]
+    }
+
+    // console.log("Target tile is " + activeTile)
+    switch(activeTile) {
+        case "C":
+            gameBoard[targetPos] = "^" //eat pacman and replace his item with a ghost
+            gameBoard[pacPos] = "^" //eat pacman and replace his item with a ghost
+            positions["^"] = targetPos;
+            game = [gameBoard, positions, size];
+            renderBoard();
+            clearInterval(ghostTrigger)
+            console.log("GAME OVER. PACMAN WAS CAUGHT BY THE GHOST.")
+            gameState = 1;
+            break;
+        default: //Any space that is not pacman can be moved through
+            positions["^"] = targetPos; //Move ghost on "upper layer" 
+            game = [gameBoard, positions, size];
+            renderBoard();
+            break;
+    }
+    // return game;
+}
+
+
+function renderBoard(){
+    let gameBoard = game[0];
+    let positions = game[1];
     let render = gameBoard.map((x) => x);
-    render[positions["^"]] = "^"
-    //and place a "blank" in the index where pacman is
     render[positions["C"]] = "C"
-    return render
+    //and place a "blank" in the index where pacman is
+    render[positions["^"]] = "^"
+    console.log(render)
+    document.getElementById("pelletLine").innerHTML = "[ " + render.join(" | ") + " ]";
 }
 
 // Returns the amount of pellets remaining in the game.
-function pelletCount(gameBoard){
+function pelletCount(){
+    let gameBoard = game[0]
     let pellets = gameBoard.filter(x => x === ".").length;
     // console.log("There are " + pellets + " pellets left")
     return pellets;
