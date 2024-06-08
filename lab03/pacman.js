@@ -3,18 +3,15 @@ var N = 10
 var game = createGame(N)
 var ghostSpeed = 2000;
 var ghostTrigger = setInterval(moveGhost, ghostSpeed, game);
-var totalScore = 0; //Score is only updated upon completing a round, not incrementally.
+var totalScore = 0;
 var gameState = 0;
 
 window.onload=function(game){
 
-    const pelletLine = document.getElementById("pelletLine");
     renderBoard();
 
-    const commentary = document.getElementById("commentary");
-    commentary.innerHTML = "Score: " + totalScore
-
-    //for arrow input activation / deactivation
+    var commentary = document.getElementById("commentary");
+    document.getElementById("commentary").innerHTML = "Score: " + totalScore
 
     //Handle inputs
     window.addEventListener('keydown', event => {
@@ -36,25 +33,14 @@ window.onload=function(game){
                 commentary.innerHTML = "Score: " + totalScore
             }
         }
-
-        if (pelletCount(game[0]) == 0){
-            clearInterval(ghostTrigger);
-            renderBoard();
-            commentary.innerHTML = "YOU WIN. FINAL SCORE: " + totalScore
-            gameState = 1;
-            setTimeout(nextLevel, 4000)
-        }
-        else{
-            renderBoard();
-        }
     })
   }
 
 /**
- * Creates an array representing a pacman game of size N (>= 5), and a dictionary tracking the indices of key pieces. This function is a pseudo-class basically...
+ * Creates a game of size N
  *
- * @param {*} N - size of the game board
- * @returns {{}} - game variables in an array
+ * @param {*} N - the number of elements in the pelletline
+ * @returns {{}} - lower level gameboard (pellets and fruit), upper level (ghost and pacman) and size variable
  */
 function createGame(N){
     const pellet = "."
@@ -93,8 +79,10 @@ function createGame(N){
     return [pelletLine, pieces, N-1]
 }
 
+/**
+ * Moves pacman to the left
+ */
 function moveLeft(){
-    let gameBoard = game[0];
     let positions = game[1];
     let size = game[2];
 
@@ -109,55 +97,13 @@ function moveLeft(){
         targetPos -= 1
     }
 
-    //Check if ghost is in target tile and update the target info
-    let ghostPos = positions["^"];
-    // console.log("Ghost at " + ghostPos);
-    let activeTile = null;
-
-    if (targetPos == ghostPos){
-        activeTile = "^"
-    }
-    else{
-        activeTile = gameBoard[targetPos]
-    }
-
-    let pellets = null;
-    let render = null;
-
-    switch(activeTile) {
-        case ".":
-            gameBoard[targetPos] = " " //eat the pellet on "lower layer"
-            positions["C"] = targetPos; //Move pacman on "upper layer" 
-            totalScore += 1;
-            game = [gameBoard, positions, size];
-            break;
-        case "^":
-            document.getElementById("commentary").innerHTML = "GAME OVER. FINAL SCORE: " + totalScore;
-            clearInterval(ghostTrigger);
-            console.log("Pacman walked into a ghost at " + targetPos + ". Game over.");
-            gameBoard[targetPos] = "^"
-            positions["C"] = targetPos;
-            game = [gameBoard, positions, size]
-            gameState = 1;
-            setTimeout(resetGame, 4000)
-            break;
-        case "@":
-            gameBoard[targetPos] = " " //eat the fruit on "lower layer"
-            positions["C"] = targetPos; //Move pacman on "upper layer" 
-            pellets = pelletCount(gameBoard);
-            console.log("Ate a fruit. Woop.")
-            game = [gameBoard, positions, size];
-            break;
-        default: //free space, can move through without issue
-            positions["C"] = targetPos; //Move pacman on "upper layer" 
-            pellets = pelletCount(gameBoard);
-            game = [gameBoard, positions, size];
-            break;
-    }
+    moveCheck(targetPos)
 }
 
+/**
+ * Moves pacman to the right
+ */
 function moveRight(){
-    let gameBoard = game[0];
     let positions = game[1];
     let size = game[2];
 
@@ -172,9 +118,21 @@ function moveRight(){
         targetPos += 1
     }
 
+    moveCheck(targetPos)
+}
+
+/**
+ * Handles interactions with the destination square pacman is intending to move to.
+ *
+ * @param {*} targetPos - the index of the destination square
+ */
+function moveCheck(targetPos){
+    let gameBoard = game[0];
+    let positions = game[1];
+    let size = game[2];
+    
     //Check if ghost is in target tile and update the target info
     let ghostPos = positions["^"];
-    // console.log("Ghost at " + ghostPos);
     let activeTile = null;
 
     if (targetPos == ghostPos){
@@ -184,9 +142,6 @@ function moveRight(){
         activeTile = gameBoard[targetPos]
     }
 
-    let pellets = null;
-    let render = null;
-
     // console.log("Target tile is " + activeTile)
     switch(activeTile) {
         case ".":
@@ -194,32 +149,40 @@ function moveRight(){
             positions["C"] = targetPos; //Move pacman on "upper layer" 
             totalScore += 1;
             game = [gameBoard, positions, size];
+            if (pelletCount(game[0]) == 0){
+                gameState = 1;
+                clearInterval(ghostTrigger);
+                commentary.innerHTML = "YOU WIN. FINAL SCORE: " + totalScore
+                setTimeout(nextLevel, 4000)
+            }
             break;
         case "^":
-            document.getElementById("commentary").innerHTML = "GAME OVER. FINAL SCORE: " + totalScore;
+            commentary.innerHTML = "GAME OVER. FINAL SCORE: " + totalScore;
             clearInterval(ghostTrigger);
             console.log("Pacman walked into a ghost at " + targetPos + ". Game over.");
-            gameBoard[targetPos] = "^"
+            // gameBoard[targetPos] = "^"
             positions["C"] = targetPos;
             game = [gameBoard, positions, size]
             gameState = 1;
+            renderBoard();
             setTimeout(resetGame, 4000)
             break;
         case "@":
             gameBoard[targetPos] = " " //eat the fruit on "lower layer"
             positions["C"] = targetPos; //Move pacman on "upper layer" 
-            pellets = pelletCount(gameBoard);
-            console.log("Ate a fruit. Woop.")
+            console.log("Ate a fruit. Woop.") //The only thing the fruit does, at this point.
             game = [gameBoard, positions, size];
             break;
         default: //free space, can move through without issue
             positions["C"] = targetPos; //Move pacman on "upper layer" 
-            pellets = pelletCount(gameBoard);
             game = [gameBoard, positions, size];
             break;
     }
 }
 
+/**
+ * Moves the ghost randomly and handles interactions with pacman
+ */
 function moveGhost(){
 
     let gameBoard = game[0];
@@ -286,7 +249,9 @@ function moveGhost(){
     // return game;
 }
 
-
+/**
+ * Draws a composite board that combines both layers of the board to both the console and the HTML page.
+ */
 function renderBoard(){
     let gameBoard = game[0];
     let positions = game[1];
@@ -300,7 +265,11 @@ function renderBoard(){
     document.getElementById("pelletLine").innerHTML = "[ " + render.join(" | ") + " ]";
 }
 
-// Returns the amount of pellets remaining in the game.
+/**
+ * Determines the number of pellets left on the board
+ *
+ * @returns {Number} pellets
+ */
 function pelletCount(){
     let gameBoard = game[0]
     let pellets = gameBoard.filter(x => x === ".").length;
@@ -308,12 +277,15 @@ function pelletCount(){
     return pellets;
 }
 
+/**
+ * Creates a new level and ups the challenge
+ */
 function nextLevel(){
     if (N < 20){
         N += 2; //add some challenge and also visually see the next level:)
     }
     if (ghostSpeed > 500){
-        ghostSpeed -= 250;
+        ghostSpeed -= 50;
     }
     game = createGame(N) 
     gameState = 0;
@@ -321,7 +293,9 @@ function nextLevel(){
     renderBoard();
 }
 
-
+/**
+ * Resets the game to the base level of difficulty
+ */
 function resetGame(){
     N = 10;
     ghostSpeed = 2000;
