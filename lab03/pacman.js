@@ -1,7 +1,8 @@
 //global game var
 var N = 10
 var game = createGame(N)
-var ghostTrigger = setInterval(moveGhost, 2000, game);
+var ghostSpeed = 2000;
+var ghostTrigger = setInterval(moveGhost, ghostSpeed, game);
 var totalScore = 0; //Score is only updated upon completing a round, not incrementally.
 var gameState = 0;
 
@@ -41,6 +42,7 @@ window.onload=function(game){
             renderBoard();
             commentary.innerHTML = "YOU WIN. FINAL SCORE: " + totalScore
             gameState = 1;
+            setTimeout(nextLevel, 4000)
         }
         else{
             renderBoard();
@@ -137,6 +139,7 @@ function moveLeft(){
             positions["C"] = targetPos;
             game = [gameBoard, positions, size]
             gameState = 1;
+            setTimeout(resetGame, 4000)
             break;
         case "@":
             gameBoard[targetPos] = " " //eat the fruit on "lower layer"
@@ -200,6 +203,7 @@ function moveRight(){
             positions["C"] = targetPos;
             game = [gameBoard, positions, size]
             gameState = 1;
+            setTimeout(resetGame, 4000)
             break;
         case "@":
             gameBoard[targetPos] = " " //eat the fruit on "lower layer"
@@ -271,6 +275,7 @@ function moveGhost(){
             clearInterval(ghostTrigger)
             console.log("GAME OVER. PACMAN WAS CAUGHT BY THE GHOST.")
             gameState = 1;
+            setTimeout(resetGame, 4000)
             break;
         default: //Any space that is not pacman can be moved through
             positions["^"] = targetPos; //Move ghost on "upper layer" 
@@ -289,7 +294,9 @@ function renderBoard(){
     render[positions["C"]] = "C"
     //and place a "blank" in the index where pacman is
     render[positions["^"]] = "^"
-    console.log(render)
+    if (gameState == 0){
+        console.log(render)
+    }
     document.getElementById("pelletLine").innerHTML = "[ " + render.join(" | ") + " ]";
 }
 
@@ -299,4 +306,29 @@ function pelletCount(){
     let pellets = gameBoard.filter(x => x === ".").length;
     // console.log("There are " + pellets + " pellets left")
     return pellets;
+}
+
+function nextLevel(){
+    if (N < 20){
+        N += 2; //add some challenge and also visually see the next level:)
+    }
+    if (ghostSpeed > 500){
+        ghostSpeed -= 250;
+    }
+    game = createGame(N) 
+    gameState = 0;
+    ghostTrigger = setInterval(moveGhost, ghostSpeed, game)
+    renderBoard();
+}
+
+
+function resetGame(){
+    N = 10;
+    ghostSpeed = 2000;
+    game = createGame(N) 
+    gameState = 0;
+    totalScore = 0;
+    ghostTrigger = setInterval(moveGhost, ghostSpeed, game)
+    commentary.innerHTML = "NEW GAME"
+    renderBoard();
 }
